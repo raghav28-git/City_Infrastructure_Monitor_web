@@ -15,52 +15,76 @@ class Sidebar extends StatefulWidget {
 }
 
 class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
-  bool isCollapsed = false;
-  late AnimationController _animationController;
-  late Animation<double> _animation;
+  bool isHovered = false;
+  int? hoveredIndex;
+  late AnimationController _controller;
+  late Animation<double> _widthAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _widthAnimation = Tween<double>(begin: 80, end: 280).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Interval(0.3, 1.0, curve: Curves.easeIn)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   final List<SidebarItem> menuItems = [
     SidebarItem('Dashboard', Icons.dashboard_outlined, Icons.dashboard),
     SidebarItem('Infrastructure', Icons.apartment_outlined, Icons.apartment),
-    SidebarItem('Map Monitoring', Icons.map_outlined, Icons.map),
     SidebarItem('Alerts', Icons.notifications_outlined, Icons.notifications),
     SidebarItem('Analytics', Icons.analytics_outlined, Icons.analytics),
     SidebarItem('Settings', Icons.settings_outlined, Icons.settings),
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: isCollapsed ? 80 : 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(2, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(child: _buildMenuItems()),
-        ],
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => isHovered = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => isHovered = false);
+        _controller.reverse();
+      },
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Container(
+            width: _widthAnimation.value,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(4, 0),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 20),
+                Expanded(child: _buildMenuItems()),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -68,56 +92,63 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.location_city, color: Colors.white, size: 24),
-          ),
-          if (!isCollapsed) ...[
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Smart City',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  Text(
-                    'Infrastructure Monitor',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+      child: ClipRect(
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
+              child: const Icon(Icons.location_city, color: Colors.white, size: 22),
             ),
+            if (isHovered) ...[
+              const SizedBox(width: 12),
+              Flexible(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Smart City',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      Text(
+                        'Infrastructure Monitor',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isCollapsed = !isCollapsed;
-              });
-            },
-            icon: Icon(
-              isCollapsed ? Icons.menu : Icons.menu_open,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -131,38 +162,82 @@ class _SidebarState extends State<Sidebar> with SingleTickerProviderStateMixin {
         final isActive = widget.currentPage == item.title;
         
         return Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => widget.onPageChanged(item.title),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isActive ? const Color(0xFF4F46E5).withOpacity(0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isActive ? item.activeIcon : item.icon,
-                      color: isActive ? const Color(0xFF4F46E5) : Colors.grey[600],
-                      size: 20,
-                    ),
-                    if (!isCollapsed) ...[
-                      const SizedBox(width: 12),
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF374151),
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                          fontSize: 14,
+          margin: const EdgeInsets.only(bottom: 8),
+          child: MouseRegion(
+            onEnter: (_) => setState(() => hoveredIndex = index),
+            onExit: (_) => setState(() => hoveredIndex = null),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => widget.onPageChanged(item.title),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _widthAnimation.value > 150 ? 16 : 12,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: isActive
+                        ? LinearGradient(
+                            colors: [
+                              const Color(0xFF6366F1).withOpacity(0.2),
+                              const Color(0xFF8B5CF6).withOpacity(0.1),
+                            ],
+                          )
+                        : null,
+                    borderRadius: BorderRadius.circular(12),
+                    border: isActive
+                        ? Border.all(color: const Color(0xFF6366F1).withOpacity(0.3), width: 1)
+                        : null,
+                  ),
+                  child: ClipRect(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedScale(
+                          scale: hoveredIndex == index ? 1.5 : 1.0,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutBack,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              gradient: isActive
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                    )
+                                  : null,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              isActive ? item.activeIcon : item.icon,
+                              color: isActive ? Colors.white : Colors.grey[600],
+                              size: 20,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
+                        if (isHovered && _widthAnimation.value > 150) ...[
+                          SizedBox(width: hoveredIndex == index ? 18 : 14),
+                          Expanded(
+                            child: FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: Text(
+                                item.title,
+                                style: TextStyle(
+                                  color: isActive ? const Color(0xFF6366F1) : const Color(0xFF64748B),
+                                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                                  fontSize: 14,
+                                  letterSpacing: 0.3,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

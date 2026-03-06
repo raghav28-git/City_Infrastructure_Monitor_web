@@ -1,14 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'services/auth_service.dart';
 import 'pages/admin/admin_dashboard.dart';
 
-void main() => runApp(CityInfrastructureApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(CityInfrastructureApp());
+}
 
 class CityInfrastructureApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'City Infrastructure Monitor',
-      home: LandingPage(),
+      home: AuthCheck(),
+    );
+  }
+}
+
+class AuthCheck extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: AuthService.isLoggedIn(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.data == true) {
+          return AdminDashboard();
+        }
+        return LandingPage();
+      },
     );
   }
 }
@@ -51,37 +80,81 @@ class LandingPage extends StatelessWidget {
 
   Widget _buildNavBar(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 8, offset: Offset(0, 2))],
       ),
       child: Row(
         children: [
-          Text('CityMonitor', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green[700])),
-          Spacer(),
-          Text('Features', style: TextStyle(color: Colors.grey[700])),
-          SizedBox(width: 24),
-          Text('Dashboard', style: TextStyle(color: Colors.grey[700])),
-          SizedBox(width: 24),
-          Text('Infrastructure', style: TextStyle(color: Colors.grey[700])),
-          SizedBox(width: 24),
-          Text('Analytics', style: TextStyle(color: Colors.grey[700])),
-          SizedBox(width: 24),
-          Text('Contact', style: TextStyle(color: Colors.grey[700])),
-          SizedBox(width: 32),
-          ElevatedButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage())),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.green[700]),
-            child: Text('Login'),
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green[700]!, Colors.green[500]!],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.location_city, color: Colors.white, size: 20),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'CityMonitor',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AdminDashboard())),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700]),
-            child: Text('Admin Panel', style: TextStyle(color: Colors.white)),
+          Spacer(),
+          Row(
+            children: [
+              _buildNavItem('Home'),
+              SizedBox(width: 32),
+              _buildNavItem('About Us'),
+              SizedBox(width: 32),
+              _buildNavItem('Contact'),
+              SizedBox(width: 40),
+              Container(
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage())),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.green[700],
+                    elevation: 0,
+                    side: BorderSide(color: Colors.green[200]!, width: 1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                  child: Text('Login', style: TextStyle(fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(String text) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }
@@ -501,10 +574,32 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   Future<void> _signIn() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    // Simulate login delay
-    await Future.delayed(Duration(seconds: 1));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+    
+    final result = await AuthService.signInWithEmail(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    
+    if (result != null) {
+      await AuthService.login('admin');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AdminDashboard()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed. Please check your credentials.')),
+      );
+    }
+    
     setState(() => _isLoading = false);
   }
 
@@ -695,9 +790,24 @@ class _SignUpPageState extends State<SignUpPage> {
     }
     
     setState(() => _isLoading = true);
-    // Simulate signup delay
-    await Future.delayed(Duration(seconds: 1));
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminDashboard()));
+    
+    final result = await AuthService.signUpWithEmail(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    
+    if (result != null) {
+      await AuthService.login('admin');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AdminDashboard()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Signup failed. Please try again.')),
+      );
+    }
+    
     setState(() => _isLoading = false);
   }
 

@@ -1,1 +1,44 @@
-import 'package:flutter/material.dart';\nimport 'admin_dashboard.dart';\nimport 'infrastructure_management.dart';\nimport 'alerts_management.dart';\nimport 'analytics.dart';\n\nclass MapMonitoring extends StatelessWidget {\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(\n        title: Text('Map Monitoring'),\n        backgroundColor: Colors.red,\n      ),\n      endDrawer: _buildNavDrawer(context),\n      body: Column(\n        children: [\n          Container(\n            height: 200,\n            margin: EdgeInsets.all(16),\n            decoration: BoxDecoration(\n              color: Colors.grey[300],\n              borderRadius: BorderRadius.circular(8),\n            ),\n            child: Center(\n              child: Column(\n                mainAxisAlignment: MainAxisAlignment.center,\n                children: [\n                  Icon(Icons.map, size: 64, color: Colors.grey[600]),\n                  Text('Interactive City Map', style: TextStyle(fontSize: 18)),\n                ],\n              ),\n            ),\n          ),\n          Expanded(\n            child: ListView(\n              padding: EdgeInsets.all(16),\n              children: [\n                _buildZoneStatus('Downtown', 'High Traffic', Colors.red),\n                _buildZoneStatus('North District', 'Normal', Colors.green),\n                _buildZoneStatus('East Side', 'Maintenance', Colors.orange),\n                _buildZoneStatus('West End', 'Low Activity', Colors.blue),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n\n  Widget _buildZoneStatus(String zone, String status, Color color) {\n    return Card(\n      child: ListTile(\n        leading: CircleAvatar(backgroundColor: color, radius: 8),\n        title: Text(zone),\n        subtitle: Text(status),\n        trailing: Icon(Icons.location_on),\n      ),\n    );\n  }\n\n  Widget _buildNavDrawer(BuildContext context) {\n    return Drawer(\n      child: ListView(\n        children: [\n          DrawerHeader(\n            decoration: BoxDecoration(color: Colors.red),\n            child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),\n          ),\n          ListTile(\n            leading: Icon(Icons.dashboard),\n            title: Text('Dashboard'),\n            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AdminDashboard())),\n          ),\n          ListTile(\n            leading: Icon(Icons.build),\n            title: Text('Infrastructure'),\n            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => InfrastructureManagement())),\n          ),\n          ListTile(\n            leading: Icon(Icons.map),\n            title: Text('Map Monitoring'),\n            onTap: () => Navigator.pop(context),\n          ),\n          ListTile(\n            leading: Icon(Icons.warning),\n            title: Text('Alerts'),\n            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AlertsManagement())),\n          ),\n          ListTile(\n            leading: Icon(Icons.analytics),\n            title: Text('Analytics'),\n            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => Analytics())),\n          ),\n        ],\n      ),\n    );\n  }\n}
+import 'package:flutter/material.dart';
+
+class MapMonitoringContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Map Monitoring',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            height: 500,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.map, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Map View Coming Soon',
+                    style: TextStyle(fontSize: 20, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   const TopAppBar({Key? key}) : super(key: key);
@@ -22,24 +23,31 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Expanded(
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                 ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search infrastructure, alerts, zones...',
-                    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.location_city, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Smart City Infrastructure Monitor',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -48,7 +56,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
           const SizedBox(width: 16),
           _buildNotificationButton(),
           const SizedBox(width: 16),
-          _buildProfileAvatar(),
+          _buildProfileAvatar(context),
           const SizedBox(width: 20),
         ],
       ),
@@ -120,26 +128,64 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildProfileAvatar() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+  Widget _buildProfileAvatar(BuildContext context) {
+    return PopupMenuButton(
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+          ),
+          borderRadius: BorderRadius.circular(12),
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Text(
-          'AD',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+        child: const Center(
+          child: Text(
+            'AD',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
+      itemBuilder: (context) => <PopupMenuEntry>[
+        PopupMenuItem(
+          child: Row(
+            children: [
+              Icon(Icons.person, size: 18, color: Colors.grey[700]),
+              const SizedBox(width: 12),
+              const Text('Profile'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              Icon(Icons.settings, size: 18, color: Colors.grey[700]),
+              const SizedBox(width: 12),
+              const Text('Settings'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          onTap: () async {
+            await AuthService.logout();
+            Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+          },
+          child: Row(
+            children: [
+              Icon(Icons.logout, size: 18, color: Colors.red[600]),
+              const SizedBox(width: 12),
+              Text('Logout', style: TextStyle(color: Colors.red[600])),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

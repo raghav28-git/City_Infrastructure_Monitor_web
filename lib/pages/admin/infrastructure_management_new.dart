@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../widgets/sidebar.dart';
 import '../../widgets/top_app_bar.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/utilization_bar.dart';
 import '../../widgets/infrastructure_card_widget.dart';
 import '../../models/infrastructure.dart';
-import '../../providers/infrastructure_provider.dart';
 
 class InfrastructureManagement extends StatefulWidget {
   @override
@@ -24,7 +22,59 @@ class _InfrastructureManagementState extends State<InfrastructureManagement>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  final List<Infrastructure> infrastructures = [];
+  final List<Infrastructure> infrastructures = [
+    Infrastructure(
+      id: '1',
+      name: 'Main Highway Bridge',
+      type: InfrastructureType.traffic,
+      zone: 'Downtown',
+      capacity: 5000,
+      currentUsage: 4200,
+      latitude: 40.7128,
+      longitude: -74.0060,
+      description: 'Primary traffic bridge connecting downtown areas',
+    ),
+    Infrastructure(
+      id: '2',
+      name: 'Central Parking Garage',
+      type: InfrastructureType.parking,
+      zone: 'City Center',
+      capacity: 800,
+      currentUsage: 650,
+      latitude: 40.7589,
+      longitude: -73.9851,
+    ),
+    Infrastructure(
+      id: '3',
+      name: 'Waste Collection Point A',
+      type: InfrastructureType.waste,
+      zone: 'North District',
+      capacity: 200,
+      currentUsage: 180,
+      latitude: 40.7831,
+      longitude: -73.9712,
+    ),
+    Infrastructure(
+      id: '4',
+      name: 'Water Treatment Plant',
+      type: InfrastructureType.water,
+      zone: 'East Side',
+      capacity: 10000,
+      currentUsage: 7500,
+      latitude: 40.7282,
+      longitude: -73.7949,
+    ),
+    Infrastructure(
+      id: '5',
+      name: 'Bus Terminal Central',
+      type: InfrastructureType.transport,
+      zone: 'Downtown',
+      capacity: 1500,
+      currentUsage: 450,
+      latitude: 40.7505,
+      longitude: -73.9934,
+    ),
+  ];
 
   @override
   void initState() {
@@ -626,12 +676,15 @@ class _InfrastructureManagementState extends State<InfrastructureManagement>
   }
 
   List<Infrastructure> _getFilteredInfrastructures() {
-    return context.read<InfrastructureProvider>().getFilteredInfrastructures(
-      searchQuery: searchQuery.isEmpty ? null : searchQuery,
-      type: selectedType,
-      zone: selectedZone,
-      status: selectedStatus,
-    );
+    return infrastructures.where((infrastructure) {
+      final matchesSearch = searchQuery.isEmpty ||
+          infrastructure.name.toLowerCase().contains(searchQuery.toLowerCase());
+      final matchesType = selectedType == null || infrastructure.type == selectedType;
+      final matchesZone = selectedZone == null || infrastructure.zone == selectedZone;
+      final matchesStatus = selectedStatus == null || infrastructure.status == selectedStatus;
+      
+      return matchesSearch && matchesType && matchesZone && matchesStatus;
+    }).toList();
   }
 
   void _showAddInfrastructureModal() {
@@ -661,7 +714,7 @@ class _InfrastructureManagementState extends State<InfrastructureManagement>
           ),
           ElevatedButton(
             onPressed: () {
-              context.read<InfrastructureProvider>().deleteInfrastructure(infrastructure.id);
+              // Handle delete
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -856,7 +909,7 @@ class _InfrastructureModalState extends State<_InfrastructureModal> {
   Future<void> _handleSubmit() async {
     if (_formKey.currentState?.validate() == true) {
       setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
       Navigator.pop(context);
     }
   }
